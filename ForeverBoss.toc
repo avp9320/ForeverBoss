@@ -1,0 +1,9 @@
+## Interface: 16001
+## Title: ForeverBoss
+## Notes: Minimal boss warnings for WoW: Forever.
+## Author: Andy VanderPloeg
+## Version: 0.1.1
+## SavedVariables: ForeverBossDB
+
+Data.lua
+Core.lua

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 — 2026-11-01
+
+- Restyled boss alerts with Blizzard tooltip-frame assets and stock WoW fonts.
+- Reduced the alert footprint so warnings feel like part of the game instead of a separate overlay.
+- Added a restrained Forever gold accent without changing encounter logic.
+
 ## 0.1.1 — 2026-11-01
 
 - Initial public testing build for WoW: Forever.

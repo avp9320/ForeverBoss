@@ -33,6 +33,8 @@ ForeverBoss is in its first WoW: Forever testing build. The warning engine is re
 
 Install through WoWUp once releases are available, or download the latest release ZIP and place the `ForeverBoss` folder in your WoW AddOns directory.
 
+GitHub releases are packaged automatically from the version in `ForeverBoss.toc`.
+
 ## Philosophy
 
 ForeverBoss should do one job and do it well: tell you what matters during a boss fight without dominating the screen.

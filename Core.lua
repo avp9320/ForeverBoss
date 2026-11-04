@@ -228,33 +228,42 @@ local function DebugCast(event, unit, spellID)
     Debug(event .. " | " .. SafeText(unit, "?") .. " | " .. spellName .. " [" .. spellIDText .. "] | encounter " .. encounterText)
 end
 
+-- A verified Forever entry always takes precedence over the Classic fallback.
 local function GetRule(spellID)
-    if spellID == nil or IsSecret(spellID) then
-        return nil
-    end
-
+    if spellID == nil or IsSecret(spellID) then return nil end
     local ok, rule = pcall(function()
-        return DATA.spells[spellID]
+        return DATA.spells[spellID] or (DATA.classicSpells and DATA.classicSpells[spellID])
     end)
-    if ok then
-        return rule
-    end
-    return nil
+    return ok and rule or nil
 end
 
-local function HandleCurated(trigger, spellID)
+local function MatchesRuleSource(rule, unit)
+    if not rule.npcID then return true end
+    if type(UnitGUID) ~= "function" or not unit then return false end
+    local ok, guid = pcall(UnitGUID, unit)
+    if not ok or type(guid) ~= "string" or IsSecret(guid) then return false end
+    local npcID = tonumber(guid:match("%-(%d+)%-[^%-]+$"))
+    return npcID == rule.npcID
+end
+
+local lastCuratedBySpell = {}
+
+local function HandleCurated(trigger, spellID, unit)
     local rule = GetRule(spellID)
-    if not rule or (rule.trigger or "START") ~= trigger or not RoleAllowed(rule) then
+    if not rule or (rule.trigger or "START") ~= trigger
+        or not RoleAllowed(rule) or not MatchesRuleSource(rule, unit) then
         return false
     end
 
-    ShowAlert(
-        rule.action or "WATCH",
-        rule.text or SafeSpellName(spellID),
-        spellID,
-        rule.duration,
-        rule.sound
-    )
+    -- The same boss can be both boss1 and the player's target. Avoid duplicate
+    -- alerts without suppressing genuinely new casts.
+    local now = GetTime and GetTime() or 0
+    local last = lastCuratedBySpell[spellID]
+    if last and now - last < 0.75 then return false end
+    lastCuratedBySpell[spellID] = now
+
+    ShowAlert(rule.action or "WATCH", rule.text or SafeSpellName(spellID),
+        spellID, rule.duration, rule.sound)
     return true
 end
 
@@ -338,24 +347,40 @@ FB:SetScript("OnEvent", function(self, event, ...)
     if event == "UNIT_SPELLCAST_START" then
         local unit, castGUID, spellID = ...
         DebugCast(event, unit, spellID)
-        HandleCurated("START", spellID)
+        HandleCurated("START", spellID, unit)
         return
     end
 
     if event == "UNIT_SPELLCAST_CHANNEL_START" then
         local unit, castGUID, spellID = ...
         DebugCast(event, unit, spellID)
-        HandleCurated("CHANNEL", spellID)
+        HandleCurated("CHANNEL", spellID, unit)
         return
     end
 
     if event == "UNIT_SPELLCAST_SUCCEEDED" then
         local unit, castGUID, spellID = ...
         DebugCast(event, unit, spellID)
-        HandleCurated("SUCCESS", spellID)
+        HandleCurated("SUCCESS", spellID, unit)
         return
     end
 end)
+
+-- Classic dungeons do not consistently expose boss1..boss5 unit tokens.
+-- Observe only the player's target/focus for curated spell IDs, not every
+-- trash cast; the curated NPC guard prevents unrelated cast warnings.
+local targetCasts = CreateFrame("Frame")
+targetCasts:SetScript("OnEvent", function(_, event, ...)
+    local handler = FB:GetScript("OnEvent")
+    if handler then handler(FB, event, ...) end
+end)
+for _, event in ipairs({
+    "UNIT_SPELLCAST_START",
+    "UNIT_SPELLCAST_CHANNEL_START",
+    "UNIT_SPELLCAST_SUCCEEDED",
+}) do
+    pcall(targetCasts.RegisterUnitEvent, targetCasts, event, "target", "focus")
+end
 
 FB:RegisterEvent("ADDON_LOADED")
 pcall(FB.RegisterEvent, FB, "ENCOUNTER_START")

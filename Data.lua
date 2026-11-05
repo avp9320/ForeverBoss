@@ -79,6 +79,8 @@ ForeverBossData = {
         ["leech poison"] = {
             { bosses={"Witherfang","Viktor the Vile"}, action="DISPEL",
               text="Cleanse Leech Poison", trigger="SUCCESS", source="forever-guide" },
+            { bosses={"Witherfang","Viktor the Vile"}, action="DISPEL",
+              text="Cleanse Leech Poison", trigger="AURA_APPLIED", source="forever-guide" },
         },
         -- Excavation Site: Wetlands, documented by Icy Veins and Method.
         ["dust storm"] = {

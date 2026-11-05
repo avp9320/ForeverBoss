@@ -6,7 +6,7 @@ ForeverBoss is built for players who want useful encounter warnings without turn
 
 ## What it does
 
-- Automatically warns for boss casts the client marks as interruptible.
+- Automatically warns for boss casts the client marks as interruptible, using boss unit cast events and a target/focus cast-info fallback when boss unit tokens are missing.
 - Supports source-grounded MOVE, INTERRUPT, DEFENSIVE, DISPEL, POSITION, and STOP warnings for known dungeon bosses. Matches actual in-game boss and spell names, not guessed spell IDs.
 - Uses a single compact warning near the top-center of the screen.
 - No permanent boss window.
@@ -27,7 +27,7 @@ ForeverBoss is built for players who want useful encounter warnings without turn
 
 ## Current status
 
-v0.2.1 ships boss-specific cast-name rules for Hall of Thanes, Ruins of Lordaeron, Excavation Site, and City of Dalaran based on published WoW Forever boss guides and client ability descriptions. Examples: Faldrim's Mind Blast, Magmatus/Infurnus Fire Nova and Combust, Plunder's Knock Away, Durgen's Fear/Rend, The Abandoned's Drain Life, Rath'mael's Flamestrike, and Witherfang/Viktor Leech Poison.
+v0.2.2 ships boss-specific cast-name rules for Hall of Thanes, Ruins of Lordaeron, Excavation Site, and City of Dalaran based on published WoW Forever boss guides and client ability descriptions. Examples: Faldrim's Mind Blast, Magmatus/Infurnus Fire Nova and Combust, Plunder's Knock Away, Durgen's Fear/Rend, The Abandoned's Drain Life, Rath'mael's Flamestrike, and Witherfang/Viktor Leech Poison.
 
 The client must report the boss name and spell cast for these alerts to trigger. Instant or aura-based mechanics may not emit a usable spellcast event. This does not imply every mechanic is covered, and we do not assign fabricated spell IDs. Use /fboss debug to capture missing casts.
 

@@ -363,11 +363,23 @@ local function CheckInterruptibleCast(unit, spellID, channel)
     end
 end
 
-local function RegisterUnitEventSafe(event)
-    local ok = pcall(FB.RegisterUnitEvent, FB, event, "boss1", "boss2", "boss3", "boss4", "boss5")
-    if not ok then
+-- RegisterUnitEvent supports at most four unit tokens. Register for the
+-- permitted UNIT_SPELLCAST events normally, then filter to boss1..boss5 in
+-- Lua; this also avoids silently losing all boss events when boss5 is added.
+local function RegisterBossCastEventSafe(event)
+    local ok, registered = pcall(FB.RegisterEvent, FB, event)
+    if not ok or registered == false then
         Debug("Could not register " .. event)
     end
+end
+
+local function IsObservedCastUnit(source, unit)
+    if IsSecret(unit) or type(unit) ~= "string" then return false end
+    if source == FB then
+        return unit:match("^boss[1-5]$") ~= nil
+    end
+    -- Only the dedicated target/focus observer forwards other units.
+    return unit == "target" or unit == "focus"
 end
 
 -- Store the protected function name when the client reports a block.
@@ -396,10 +408,10 @@ FB:SetScript("OnEvent", function(self, event, ...)
 
         CopyDefaults()
 
-        RegisterUnitEventSafe("UNIT_SPELLCAST_START")
-        RegisterUnitEventSafe("UNIT_SPELLCAST_CHANNEL_START")
-        RegisterUnitEventSafe("UNIT_SPELLCAST_SUCCEEDED")
-        RegisterUnitEventSafe("UNIT_SPELLCAST_INTERRUPTIBLE")
+        RegisterBossCastEventSafe("UNIT_SPELLCAST_START")
+        RegisterBossCastEventSafe("UNIT_SPELLCAST_CHANNEL_START")
+        RegisterBossCastEventSafe("UNIT_SPELLCAST_SUCCEEDED")
+        RegisterBossCastEventSafe("UNIT_SPELLCAST_INTERRUPTIBLE")
 
         Debug("Loaded. Unit cast listeners registered.")
         return
@@ -428,6 +440,7 @@ FB:SetScript("OnEvent", function(self, event, ...)
 
     if event == "UNIT_SPELLCAST_INTERRUPTIBLE" then
         local unit, castGUID, spellID = ...
+        if not IsObservedCastUnit(self, unit) then return end
         DebugCast(event, unit, spellID)
         HandleInterruptible(unit, spellID)
         return
@@ -435,6 +448,7 @@ FB:SetScript("OnEvent", function(self, event, ...)
 
     if event == "UNIT_SPELLCAST_START" then
         local unit, castGUID, spellID = ...
+        if not IsObservedCastUnit(self, unit) then return end
         DebugCast(event, unit, spellID)
         local curated = HandleCurated("START", spellID, unit)
         if not curated then
@@ -445,6 +459,7 @@ FB:SetScript("OnEvent", function(self, event, ...)
 
     if event == "UNIT_SPELLCAST_CHANNEL_START" then
         local unit, castGUID, spellID = ...
+        if not IsObservedCastUnit(self, unit) then return end
         DebugCast(event, unit, spellID)
         local curated = HandleCurated("CHANNEL", spellID, unit)
         if not curated then
@@ -455,6 +470,7 @@ FB:SetScript("OnEvent", function(self, event, ...)
 
     if event == "UNIT_SPELLCAST_SUCCEEDED" then
         local unit, castGUID, spellID = ...
+        if not IsObservedCastUnit(self, unit) then return end
         DebugCast(event, unit, spellID)
         HandleCurated("SUCCESS", spellID, unit)
         return
@@ -467,7 +483,7 @@ end)
 local targetCasts = CreateFrame("Frame")
 targetCasts:SetScript("OnEvent", function(_, event, ...)
     local handler = FB:GetScript("OnEvent")
-    if handler then handler(FB, event, ...) end
+    if handler then handler(targetCasts, event, ...) end
 end)
 for _, event in ipairs({
     "UNIT_SPELLCAST_START",

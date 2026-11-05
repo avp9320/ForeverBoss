@@ -10,14 +10,16 @@ This is a release gate, not a claim of implementation. README claims and static 
 
 ## Phase 1 implementation notes
 
-- [x] Added a curated `SPELL_AURA_APPLIED` combat-log path for documented non-cast effects (`Core.lua`, commit `6ae7b05`), with exact boss/source-name matching, secret-value checks and duplicate suppression. Added a Leech Poison aura rule for Witherfang/Viktor (`Data.lua`, commit `5ac972b`). This is code implementation, **not** evidence that the Forever client emits the event or uses the documented names.
-- [ ] Expand evidence-backed aura and other non-cast mechanic coverage; capture missing encounters in game without guessing IDs.
-- [ ] Live-verify combat-log availability, source attribution, Leech Poison event ordering, and alert deduplication.
+- [x] Removed prohibited `COMBAT_LOG_EVENT_UNFILTERED` subscription and the unreachable `AURA_APPLIED` handler after the player reported a protected-action popup. Even a pcall-protected registration can raise `ADDON_ACTION_FORBIDDEN` on WoW: Forever (commit `1368953`). Previously planned non-cast effects remain **unimplemented** until a permitted API or live observation supports them.
+- [x] Fixed invalid five-unit `RegisterUnitEvent` registration by subscribing to permitted cast events and filtering boss1–boss5 locally, while keeping target/focus observers separate (commit `fcc7562`). Live verification remains pending.
+- [x] Added `ADDON_ACTION_FORBIDDEN` and `ADDON_ACTION_BLOCKED` diagnostics to record the blocked API where exposed; `/fboss status` shows the most recent result.
+- [ ] Implement additional permitted event mechanisms for non-cast effects; do not use restricted combat-log events or guess spell IDs.
+- [ ] Live-verify boss1–boss5 and target/focus events; Leech Poison cast detection and alert deduplication.
 
 ## Evidence
 
-- Code review: pending
-- Automated/static tests: pending
+- Code review: 2026-11-05 reviewed protected-action report and fixed restricted event subscription and invalid five-unit filter; no live verification yet.
+- Automated/static tests: Lua 5.1 compile required in GitHub release workflow; new code still needs build and client verification.
 - Live WoW: Forever client verification: pending
 - Release ZIP and WoWUp installation: pending
 

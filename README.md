@@ -27,9 +27,13 @@ ForeverBoss is built for players who want useful encounter warnings without turn
 
 ## Current status
 
-v0.2.4 ships boss-specific cast-name rules for Hall of Thanes, Ruins of Lordaeron, Excavation Site, and City of Dalaran based on published WoW Forever boss guides and client ability descriptions. Examples: Faldrim's Mind Blast, Magmatus/Infurnus Fire Nova and Combust, Plunder's Knock Away, Durgen's Fear/Rend, The Abandoned's Drain Life, Rath'mael's Flamestrike, and Witherfang/Viktor Leech Poison.
+v0.2.5 ships boss-specific cast-name rules for Hall of Thanes, Ruins of Lordaeron, Excavation Site, and City of Dalaran based on published WoW Forever boss guides and client ability descriptions. Examples: Faldrim's Mind Blast, Magmatus/Infurnus Fire Nova and Combust, Plunder's Knock Away, Durgen's Fear/Rend, The Abandoned's Drain Life, Rath'mael's Flamestrike, and Witherfang/Viktor Leech Poison.
 
-The client must report the boss name and spell cast for these alerts to trigger. Instant or aura-based mechanics may not emit a usable spellcast event. This does not imply every mechanic is covered, and we do not assign fabricated spell IDs. Use /fboss debug to capture missing casts.
+The client must report the boss name and spell cast for these alerts to trigger. **WoW: Forever restricts third-party COMBAT_LOG_EVENT_UNFILTERED registration, so this addon does not subscribe to it.** The prior experimental combat-log aura alert was removed to prevent protected-action popups; instant and aura-only mechanics without permitted cast events remain an explicit coverage gap. Leech Poison can still warn when the boss's permitted UNIT_SPELLCAST_SUCCEEDED event is delivered. This does not imply every mechanic is covered, and we do not assign fabricated spell IDs. Use /fboss debug to capture missing casts.
+
+### Protected-action popup troubleshooting
+
+If WoW says ForeverBoss was blocked from a Blizzard-only action, update to v0.2.5 or newer and reload. The previous combat-log subscription was forbidden on the Forever client, even when guarded by pcall. If a popup persists, type `/fboss status` and send us the chat output plus what action caused the warning. The addon now listens for ADDON_ACTION_FORBIDDEN/BLOCKED diagnostics so the exact rejected function can be identified where the client exposes it. The popup does not by itself prove which Lua call tainted Blizzard's UI.
 
 ## Installation
 

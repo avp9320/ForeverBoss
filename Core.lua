@@ -312,6 +312,29 @@ local function HandleInterruptible(unit, spellID)
     ShowAlert("INTERRUPT", spellName or "BOSS CAST", spellID, 2.2, true)
 end
 
+-- Many Classic-style dungeon bosses never expose boss1..boss5.
+-- Read the live cast's notInterruptible flag for target/focus too, rather
+-- than relying exclusively on UNIT_SPELLCAST_INTERRUPTIBLE.
+local function CheckInterruptibleCast(unit, spellID, channel)
+    if not unit or IsSecret(unit) then return end
+    local info = channel and UnitChannelInfo or UnitCastingInfo
+    if type(info) ~= "function" then return end
+    local ok, name, _, _, _, _, _, castIDOrFlag, finalFlag =
+        pcall(info, unit)
+    if not ok or not name or IsSecret(name) then return end
+    local cannotInterrupt
+    if channel then
+        -- Channel: ... isTradeSkill, notInterruptible, spellID
+        cannotInterrupt = castIDOrFlag
+    else
+        -- Cast: ... isTradeSkill, castID, notInterruptible, spellID
+        cannotInterrupt = finalFlag
+    end
+    if cannotInterrupt == false and not IsSecret(cannotInterrupt) then
+        HandleInterruptible(unit, spellID)
+    end
+end
+
 local function RegisterUnitEventSafe(event)
     local ok = pcall(FB.RegisterUnitEvent, FB, event, "boss1", "boss2", "boss3", "boss4", "boss5")
     if not ok then
@@ -368,14 +391,20 @@ FB:SetScript("OnEvent", function(self, event, ...)
     if event == "UNIT_SPELLCAST_START" then
         local unit, castGUID, spellID = ...
         DebugCast(event, unit, spellID)
-        HandleCurated("START", spellID, unit)
+        local curated = HandleCurated("START", spellID, unit)
+        if not curated then
+            CheckInterruptibleCast(unit, spellID, false)
+        end
         return
     end
 
     if event == "UNIT_SPELLCAST_CHANNEL_START" then
         local unit, castGUID, spellID = ...
         DebugCast(event, unit, spellID)
-        HandleCurated("CHANNEL", spellID, unit)
+        local curated = HandleCurated("CHANNEL", spellID, unit)
+        if not curated then
+            CheckInterruptibleCast(unit, spellID, true)
+        end
         return
     end
 

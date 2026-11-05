@@ -38,6 +38,14 @@ jobs:
             esac
           done < <(tr -d '\r' < ForeverBoss.toc)
 
+      - name: Reject Blizzard-only combat-log subscriptions
+        shell: bash
+        run: |
+          if grep -En '(RegisterEvent|RegisterUnitEvent|RegisterEventCallback).*COMBAT_LOG_EVENT' -- *.lua; then
+            echo 'Forever forbids third-party COMBAT_LOG_EVENT registrations, even under pcall.' >&2
+            exit 1
+          fi
+
       - name: Read addon version
         id: version
         shell: bash

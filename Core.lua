@@ -315,8 +315,33 @@ end
 -- Many Classic-style dungeon bosses never expose boss1..boss5.
 -- Read the live cast's notInterruptible flag for target/focus too, rather
 -- than relying exclusively on UNIT_SPELLCAST_INTERRUPTIBLE.
+local function KnownBossUnit(unit)
+    if type(unit)~="string" or IsSecret(unit) then return false end
+    if unit:match("^boss%d+$") then return true end
+    if type(UnitIsBossMob)=="function" then
+        local ok,isBoss=pcall(UnitIsBossMob,unit)
+        if ok and isBoss==true then return true end
+    end
+    if type(UnitName)~="function" then return false end
+    local ok,name=pcall(UnitName,unit)
+    if not ok or not name or IsSecret(name) then return false end
+    local normalized=NormalizeName(name)
+    if activeEncounterName and not IsSecret(activeEncounterName)
+        and normalized==NormalizeName(activeEncounterName) then return true end
+    for _,group in pairs(DATA.nameRules or {}) do
+        for _,rule in ipairs(group) do
+            for _,bossName in ipairs(rule.bosses or {}) do
+                if normalized==NormalizeName(bossName) then return true end
+            end
+        end
+    end
+    return false
+end
+
 local function CheckInterruptibleCast(unit, spellID, channel)
-    if not unit or IsSecret(unit) then return end
+    -- Target/focus can be trash. Only expand generic interrupt warnings to
+    -- recognized bosses or active encounters.
+    if not KnownBossUnit(unit) then return end
     local info = channel and UnitChannelInfo or UnitCastingInfo
     if type(info) ~= "function" then return end
     local ok, name, _, _, _, _, _, castIDOrFlag, finalFlag =

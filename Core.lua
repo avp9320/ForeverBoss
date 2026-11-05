@@ -330,7 +330,7 @@ local function CheckInterruptibleCast(unit, spellID, channel)
         -- Cast: ... isTradeSkill, castID, notInterruptible, spellID
         cannotInterrupt = finalFlag
     end
-    if cannotInterrupt == false and not IsSecret(cannotInterrupt) then
+    if not IsSecret(cannotInterrupt) and cannotInterrupt == false then
         HandleInterruptible(unit, spellID)
     end
 end

@@ -246,10 +246,31 @@ local function MatchesRuleSource(rule, unit)
     return npcID == rule.npcID
 end
 
+local function NormalizeName(value)
+    if type(value) ~= "string" then return "" end
+    return value:gsub("’", "'"):lower():gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
+end
+
+local function GetBossNameRule(spellID, unit)
+    local name = SafeSpellName(spellID)
+    if not name or not DATA.nameRules or not unit then return end
+    local rules = DATA.nameRules[NormalizeName(name)]
+    if not rules then return end
+    if type(UnitName) ~= "function" then return end
+    local ok, bossName = pcall(UnitName, unit)
+    if not ok or not bossName or IsSecret(bossName) then return end
+    bossName = NormalizeName(bossName)
+    for _, candidate in ipairs(rules) do
+        for _, allowed in ipairs(candidate.bosses or {}) do
+            if bossName == NormalizeName(allowed) then return candidate end
+        end
+    end
+end
+
 local lastCuratedBySpell = {}
 
 local function HandleCurated(trigger, spellID, unit)
-    local rule = GetRule(spellID)
+    local rule = GetRule(spellID) or GetBossNameRule(spellID, unit)
     if not rule or (rule.trigger or "START") ~= trigger
         or not RoleAllowed(rule) or not MatchesRuleSource(rule, unit) then
         return false

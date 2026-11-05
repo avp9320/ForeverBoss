@@ -80,6 +80,58 @@ ForeverBossData = {
             { bosses={"Witherfang","Viktor the Vile"}, action="DISPEL",
               text="Cleanse Leech Poison", trigger="SUCCESS", source="forever-guide" },
         },
+        -- Excavation Site: Wetlands, documented by Icy Veins and Method.
+        ["dust storm"] = {
+            { bosses={"Saltspine"}, action="MOVE", text="Dust Storm: step out of melee range",
+              trigger="START", source="forever-guide" },
+        },
+        ["tendon rip"] = {
+            { bosses={"Saltspine"}, action="DEFENSIVE", text="Tendon Rip on tank",
+              trigger="SUCCESS", source="forever-guide" },
+        },
+        ["terrifying roar"] = {
+            { bosses={"Shadetooth"}, action="DEFENSIVE",
+              text="Fear: avoid nearby packs", trigger="START", source="forever-guide" },
+        },
+        ["thunderclap"] = {
+            { bosses={"Relic Guardian"}, action="MOVE",
+              text="Thunderclap: leave melee range", trigger="START", source="forever-guide" },
+        },
+        -- City of Dalaran, from the Forever client spell descriptions and
+        -- beta boss walkthroughs. Cast names are confirmed, timing is not.
+        -- https://daybreakforever.com/discoveries/city-of-dalaran
+        ["focal blast"] = {
+            { bosses={"Shade of the Archmage","Arcane Anomaly"}, action="MOVE",
+              text="Focal Blast: leave the frontal beam", trigger="START", source="forever-client" },
+        },
+        ["bounding mana"] = {
+            { bosses={"Shade of the Archmage"}, action="MOVE",
+              text="Bounding Mana: avoid projectile path", trigger="START", source="forever-client" },
+        },
+        ["fel timbers"] = {
+            { bosses={"Fel Ancient"}, action="MOVE",
+              text="Fel Timbers: spread and move away", trigger="START", source="forever-client" },
+        },
+        ["arcane cascade"] = {
+            { bosses={"Mana Devourer"}, action="MOVE",
+              text="Arcane Cascade: leave the cone", trigger="START", source="forever-client" },
+        },
+        ["debilitate"] = {
+            { bosses={"Mana Devourer"}, action="DEFENSIVE",
+              text="Mana drain incoming", trigger="START", source="forever-client" },
+        },
+        ["malfunction"] = {
+            { bosses={"Unstable Sentinel"}, action="MOVE",
+              text="Malfunction: get distance", trigger="START", source="forever-guide" },
+        },
+        ["manamorph"] = {
+            { bosses={"Arcanic Enigma","Mana Elemental"}, action="DISPEL",
+              text="Dispel Manamorph", trigger="SUCCESS", source="forever-guide" },
+        },
+        ["mass polymorph"] = {
+            { bosses={"Shade of the Archmage"}, action="DEFENSIVE",
+              text="Mass Polymorph incoming", trigger="START", source="forever-guide" },
+        },
     },
 
     -- ID-specific rules still override these when supported by live evidence.

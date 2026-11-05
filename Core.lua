@@ -267,32 +267,8 @@ local function GetBossNameRule(spellID, unit)
     end
 end
 
--- Combat-log aura notifications cover mechanics that do not produce cast events.
--- Only explicitly curated AURA_APPLIED rules are eligible: never alert on
--- arbitrary combat-log traffic or on unverified spell names.
-local function HandleCuratedAura(sourceName, spellID, spellName)
-    if not ForeverBossDB or not ForeverBossDB.enabled then return end
-    if IsSecret(sourceName) or IsSecret(spellID) or IsSecret(spellName) then return end
-    if type(sourceName) ~= "string" or type(spellName) ~= "string" then return end
-    local rules = DATA.nameRules and DATA.nameRules[NormalizeName(spellName)]
-    if not rules then return end
-    for _, rule in ipairs(rules) do
-        if rule.trigger == "AURA_APPLIED" and RoleAllowed(rule) then
-            for _, boss in ipairs(rule.bosses or {}) do
-                if NormalizeName(sourceName) == NormalizeName(boss) then
-                    local now = GetTime and GetTime() or 0
-                    local key = "aura:" .. NormalizeName(sourceName) .. ":" .. NormalizeName(spellName)
-                    local last = recentInterrupts[key]
-                    if not last or now - last >= 1.5 then
-                        recentInterrupts[key] = now
-                        ShowAlert(rule.action or "WATCH", rule.text or spellName, spellID, rule.duration, rule.sound)
-                    end
-                    return
-                end
-            end
-        end
-    end
-end
+-- WoW: Forever restricts third-party combat-log access. Boss mechanics
+-- must be observed through permitted unit cast events instead.
 
 local lastCuratedBySpell = {}
 
@@ -394,7 +370,24 @@ local function RegisterUnitEventSafe(event)
     end
 end
 
+-- Store the protected function name when the client reports a block.
+-- The popup alone may blame an addon without proving direct causation.
+local lastProtectedAction
+local function RecordProtectedAction(event, addon, action)
+    if IsSecret(addon) or (addon ~= ADDON_NAME and addon ~= "ForeverBoss") then
+        return
+    end
+    lastProtectedAction = event .. ": " .. SafeText(action, "<unknown API>")
+    Print("Blocked action: " .. lastProtectedAction
+        .. " (please report this line and what you were doing).")
+end
+
 FB:SetScript("OnEvent", function(self, event, ...)
+    if event == "ADDON_ACTION_FORBIDDEN" or event == "ADDON_ACTION_BLOCKED" then
+        RecordProtectedAction(event, ...)
+        return
+    end
+
     if event == "ADDON_LOADED" then
         local loaded = ...
         if loaded ~= ADDON_NAME then
@@ -409,16 +402,6 @@ FB:SetScript("OnEvent", function(self, event, ...)
         RegisterUnitEventSafe("UNIT_SPELLCAST_INTERRUPTIBLE")
 
         Debug("Loaded. Unit cast listeners registered.")
-        return
-    end
-
-    if event == "COMBAT_LOG_EVENT_UNFILTERED" then
-        if type(CombatLogGetCurrentEventInfo) ~= "function" then return end
-        local ok, _, subevent, _, _, sourceName, _, _, _, _, _, _, spellID, spellName =
-            pcall(CombatLogGetCurrentEventInfo)
-        if ok and subevent == "SPELL_AURA_APPLIED" then
-            HandleCuratedAura(sourceName, spellID, spellName)
-        end
         return
     end
 
@@ -495,7 +478,10 @@ for _, event in ipairs({
 end
 
 FB:RegisterEvent("ADDON_LOADED")
-pcall(FB.RegisterEvent, FB, "COMBAT_LOG_EVENT_UNFILTERED")
+pcall(FB.RegisterEvent, FB, "ADDON_ACTION_FORBIDDEN")
+pcall(FB.RegisterEvent, FB, "ADDON_ACTION_BLOCKED")
+-- Third-party addons must not register COMBAT_LOG_EVENT_UNFILTERED on Forever.
+-- Even pcall cannot prevent a protected-action popup for restricted events.
 pcall(FB.RegisterEvent, FB, "ENCOUNTER_START")
 pcall(FB.RegisterEvent, FB, "ENCOUNTER_END")
 
@@ -522,6 +508,7 @@ SlashCmdList.FOREVERBOSS = function(msg)
         ShowAlert("INTERRUPT", "Test Boss Cast", nil, 2.6, true)
     elseif msg == "status" then
         Print("Enabled: " .. tostring(ForeverBossDB.enabled) .. " | Muted: " .. tostring(ForeverBossDB.muted) .. " | Debug: " .. tostring(ForeverBossDB.debug))
+        if lastProtectedAction then Print("Last protected-action warning: " .. lastProtectedAction) end
     elseif msg == "reset" then
         ForeverBossDB = {}
         CopyDefaults()
